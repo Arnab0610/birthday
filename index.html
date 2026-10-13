@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>শুভ জন্মদিন পুষ্পিতা! 🌻✨</title>
+  <title>শুভ চব্বিশতম জন্মদিন পুষ্পিতা! 🌻✨</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;600;700;800&family=Fraunces:wght@700;900&display=swap" rel="stylesheet" />
@@ -21,13 +21,43 @@
       user-select: none;
     }
 
-    #rainCanvas {
+    #rainCanvas, #fireworksCanvas {
       position: fixed; inset: 0; width: 100%; height: 100%;
-      z-index: 1; pointer-events: none;
+      pointer-events: none;
+    }
+    #rainCanvas { z-index: 1; }
+    #fireworksCanvas { z-index: 2; }
+
+    /* Floating Balloons Layer */
+    .balloon-layer {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 3; pointer-events: none; overflow: hidden;
+    }
+    .balloon {
+      position: absolute;
+      bottom: -120px;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      opacity: 0.88;
+      animation: floatUpward linear forwards;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.12));
+    }
+    .balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -14px; left: 50%;
+      transform: translateX(-50%);
+      width: 1.5px; height: 32px;
+      background: rgba(120, 80, 50, 0.4);
+    }
+    @keyframes floatUpward {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.9; }
+      90% { opacity: 0.9; }
+      100% { transform: translateY(-115vh) rotate(16deg); opacity: 0; }
     }
 
     .birthday-viewport {
-      position: relative; z-index: 2;
+      position: relative; z-index: 5;
       width: 100%; height: 100dvh;
       display: flex; flex-direction: column;
       justify-content: space-between;
@@ -189,12 +219,19 @@
 </head>
 <body>
 
+  <!-- Background Layer 1: Sunflowers -->
   <canvas id="rainCanvas"></canvas>
+
+  <!-- Background Layer 2: Fireworks (Baaji) -->
+  <canvas id="fireworksCanvas"></canvas>
+
+  <!-- Background Layer 3: Rising Balloons -->
+  <div class="balloon-layer" id="balloonLayer"></div>
 
   <div class="birthday-viewport">
     <!-- Header -->
     <div class="title-area">
-      <h1 class="bday-title">🌻 শুভ জন্মদিন পুষ্পিতা! 🎂✨</h1>
+      <h1 class="bday-title">🌻 শুভ ২৪তম জন্মদিন পুষ্পিতা! 🎂✨</h1>
       <p class="bday-sub">একমুঠো সোনালী সূর্যমুখী আর একরাশ শুভকামনা</p>
     </div>
 
@@ -231,26 +268,148 @@
   <script type="module" src="./main.js"></script>
 
   <script>
-    // 1. Initial Grand Confetti Blast
-    window.addEventListener('load', () => {
-      triggerConfetti();
-      setTimeout(triggerConfetti, 600);
-      setTimeout(startReadingWish, 1200);
-    });
+    // ==========================================
+    // 1. REALISTIC BAAJI / FIREWORKS ENGINE
+    // ==========================================
+    const fwCanvas = document.getElementById('fireworksCanvas');
+    const fwCtx = fwCanvas.getContext('2d');
+    let fwParticles = [];
 
-    function triggerConfetti() {
-      if (typeof confetti === 'function') {
-        confetti({
-          particleCount: 90,
-          spread: 75,
-          origin: { y: 0.6 },
-          colors: ['#ffb300', '#ff6f00', '#ffd54f', '#0288d1', '#e91e63']
-        });
+    function resizeFwCanvas() {
+      fwCanvas.width = window.innerWidth;
+      fwCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeFwCanvas);
+    resizeFwCanvas();
+
+    class FireworkParticle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.015;
+        this.gravity = 0.08;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.alpha -= this.decay;
+      }
+      draw() {
+        fwCtx.save();
+        fwCtx.globalAlpha = Math.max(0, this.alpha);
+        fwCtx.fillStyle = this.color;
+        fwCtx.shadowBlur = 8;
+        fwCtx.shadowColor = this.color;
+        fwCtx.beginPath();
+        fwCtx.arc(this.x, this.y, 2.2, 0, Math.PI * 2);
+        fwCtx.fill();
+        fwCtx.restore();
       }
     }
 
-    // 2. Heartfelt Bengali Wish Lines
-    const fullWish = "পুষ্পিতা, তোর চব্বিশতম জন্মদিনটা হোক এক আকাশ রোদ্দুর আর একরাশ সুর্যমুখীর মতো স্নিগ্ধ ও সুন্দর। জীবনের নতুন এই ধাপে তোর সব স্বপ্ন সত্যি হোক, প্রতিটা দিন ভরে উঠুক সাফল্য, শান্তি আর প্রাণখোলা হাসিতে। খুব ভালো থাকিস সব সময়! শুভ জন্মদিন! 🌻🎂💛";
+    function createFirework(x, y) {
+      const colors = ['#ffb300', '#ff3d00', '#ffd54f', '#00e5ff', '#ff4081', '#76ff03'];
+      const chosenColor = colors[Math.floor(Math.random() * colors.length)];
+      for (let i = 0; i < 45; i++) {
+        fwParticles.push(new FireworkParticle(x, y, chosenColor));
+      }
+    }
+
+    function animateFireworks() {
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+      for (let i = fwParticles.length - 1; i >= 0; i--) {
+        const p = fwParticles[i];
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) fwParticles.splice(i, 1);
+      }
+      requestAnimationFrame(animateFireworks);
+    }
+    animateFireworks();
+
+    // Akashe majhe majhe baaji fatbe
+    setInterval(() => {
+      const rx = Math.random() * (fwCanvas.width * 0.8) + (fwCanvas.width * 0.1);
+      const ry = Math.random() * (fwCanvas.height * 0.45) + (fwCanvas.height * 0.1);
+      createFirework(rx, ry);
+    }, 1800);
+
+
+    // ==========================================
+    // 2. RISING 3D BALLOONS GENERATOR
+    // ==========================================
+    const balloonLayer = document.getElementById('balloonLayer');
+    const balloonGradients = [
+      'radial-gradient(circle at 35% 35%, #ffd54f, #ff8f00)',
+      'radial-gradient(circle at 35% 35%, #ff8a80, #d50000)',
+      'radial-gradient(circle at 35% 35%, #80d8ff, #0091ea)',
+      'radial-gradient(circle at 35% 35%, #b9f6ca, #00c853)',
+      'radial-gradient(circle at 35% 35%, #ea80fc, #aa00ff)'
+    ];
+
+    function spawnBalloon() {
+      if (!balloonLayer) return;
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      const size = 34 + Math.random() * 26; // 34px - 60px
+      b.style.width = size + 'px';
+      b.style.height = (size * 1.25) + 'px';
+      b.style.left = (Math.random() * 92) + 'vw';
+      b.style.background = balloonGradients[Math.floor(Math.random() * balloonGradients.length)];
+      b.style.animationDuration = (8 + Math.random() * 5) + 's';
+
+      balloonLayer.appendChild(b);
+      setTimeout(() => b.remove(), 13000);
+    }
+    setInterval(spawnBalloon, 1000);
+    for (let i = 0; i < 5; i++) setTimeout(spawnBalloon, i * 250);
+
+
+    // ==========================================
+    // 3. PARTY POPPER CORNER CANNONS BLAST
+    // ==========================================
+    function firePartyPoppers() {
+      if (typeof confetti !== 'function') return;
+      // Bamer corner popper
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.85 },
+        colors: ['#ffb300', '#ff1744', '#00e5ff', '#ffea00']
+      });
+      // Daaner corner popper
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.85 },
+        colors: ['#ffb300', '#ff1744', '#00e5ff', '#ffea00']
+      });
+    }
+
+    // Proti 5 second por por subtle party popper blast
+    setInterval(firePartyPoppers, 5500);
+
+
+    // ==========================================
+    // 4. INITIAL REVEAL & WISH TYPEWRITER
+    // ==========================================
+    window.addEventListener('load', () => {
+      firePartyPoppers();
+      createFirework(window.innerWidth * 0.3, window.innerHeight * 0.25);
+      createFirework(window.innerWidth * 0.7, window.innerHeight * 0.22);
+      setTimeout(startReadingWish, 1200);
+    });
+
+    const fullWish = "শুভ জন্মদিন পুষ্পিতা! তোর জীবনের এই নতুন বছরটা হোক একরাশ সোনালী সূর্যমুখীর মতোই উজ্জ্বল আর আনন্দময়। তোর সব চাওয়া সত্যি হোক, তোর মুখে এই মিষ্টি হাসিটা চিরকাল অমলিন থাকুক। নতুন এই বয়সে অনেক বড় হ, অনেক ভালো থাকিস সব সময়! শুভ জন্মদিন! 🌻✨🎉";
 
     const typedElem = document.getElementById('typedWish');
     const arnabImg = document.getElementById('arnabSpeaker');
@@ -258,22 +417,26 @@
 
     function startReadingWish() {
       let charIdx = 0;
-      // Arnab pore shonanor bhabe bounce/talk animation korbe
       if (arnabImg) arnabImg.classList.add('char-speaking');
 
       const typingTimer = setInterval(() => {
         if (charIdx < fullWish.length) {
           typedElem.textContent += fullWish.charAt(charIdx);
           charIdx++;
+          // Lekhar majhe majhe akashe baaji blast
+          if (charIdx === 40 || charIdx === 90) {
+            createFirework(window.innerWidth * (0.2 + Math.random() * 0.6), window.innerHeight * 0.2);
+          }
         } else {
           clearInterval(typingTimer);
           if (arnabImg) arnabImg.classList.remove('char-speaking');
-          cursor.style.display = 'none'; // Typing shesh hole cursor bondho
+          cursor.style.display = 'none';
           
-          // Sheshe arekbar celebration blast
-          setTimeout(triggerConfetti, 400);
+          // Sheshe grand celebration finale!
+          firePartyPoppers();
+          createFirework(window.innerWidth * 0.5, window.innerHeight * 0.2);
         }
-      }, 50); // Reading/Typing speed
+      }, 50);
     }
   </script>
 </body>
